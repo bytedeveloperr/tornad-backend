@@ -5,7 +5,7 @@ const Wallet = new Schema({
     type: String,
     required: false,
   },
-  privateKey: {
+  keystore: {
     type: JSON,
     required: true,
   },

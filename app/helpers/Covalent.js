@@ -47,9 +47,9 @@ class Covalent {
     }
   }
 
-  async getSpotPrices(tickers = []) {
+  async getSpotPrices(tickers) {
     try {
-      const url = `/pricing/tickers/?key=${this.apikey}&tickers=${tickers}`
+      const url = `/pricing/tickers/?key=${this.apikey}`
       const response = await this.axios.get(url)
       return response.data.data
     } catch (e) {

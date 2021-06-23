@@ -25,9 +25,10 @@ class AuthController extends Controller {
       const web3Helper = new Web3Helper()
       const account = await web3Helper.createAccount()
 
+      const secret = Buffer.from(username).toString("base64")
       const walletConstruct = {
         address: account.address,
-        privateKey: await web3Helper.encryptPrivateKey(account.privateKey, process.env.PP),
+        keystore: await web3Helper.getKeystore(account.privateKey, secret),
       }
 
       const session = await mongoose.startSession()

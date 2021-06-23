@@ -21,7 +21,7 @@ class WalletController {
       try {
         chains = JSON.parse(process.env.CHAINS)
       } catch (e) {
-        chins = { ftm: 4002, matic: 80001, eth: 42, bsc: 97, avax: 43113 }
+        chains = { ftm: 4002, matic: 80001, eth: 42, bsc: 97, avax: 43113 }
       }
 
       const wallet = await Wallet.findOne({ user: user._id }, "address")

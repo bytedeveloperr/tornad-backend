@@ -9,36 +9,37 @@ const covalent = new Covalent()
 class TransactionController {
   async createTransfer(req, res, next) {
     try {
-      const { user, body } = req
+      const { query, user, body } = req
 
-      const web3 = new Web3Helper(body.chain)
+      const web3 = new Web3Helper(query.chain?.toLowerCase())
 
       const senderWallet = await Wallet.findOne({ user: user._id })
       if (!senderWallet) {
         throw new Error("Sender Wallet not found")
       }
 
-      let receiverWallet
+      let receiverAddress
       if (body.receiverUsername) {
         const receiver = await User.findOne({ username: body.receiverUsername })
         if (!receiver) {
           throw new Error("Receiver username does not exist")
         }
 
-        receiverWallet = await Wallet.findOne({ _id: receiver.wallets[0] }, "address")
+        let wallet = await Wallet.findOne({ _id: receiver.wallets[0] }, "address")
+        receiverAddress = wallet.address
       } else {
-        receiverWallet = body.receiverWallet
+        receiverAddress = body.receiverAddress
       }
 
-      senderWallet.privateKey = web3.decryptPrivateKey(senderWallet.privateKey, process.env.PP).privateKey
+      const secret = Buffer.from(user.username).toString("base64")
+      const privateKey = web3.decryptKeystore(senderWallet.keystore, secret).privateKey
       const transaction = await web3.createTransaction(
         {
-          to: receiverWallet.address,
+          to: receiverAddress,
           from: senderWallet.address,
-          value: body.amount,
-          gas: 0.00000000000003,
+          value: String(body.amount),
         },
-        senderWallet.privateKey
+        privateKey
       )
       Controller.success(res, "Transaction successful", transaction)
     } catch (e) {
@@ -53,27 +54,31 @@ class TransactionController {
       try {
         chains = JSON.parse(process.env.CHAINS)
       } catch (e) {
-        chins = { ftm: 4002, matic: 80001, eth: 42, bsc: 97, avax: 43113 }
+        chains = { ftm: 4002, matic: 80001, eth: 42, bsc: 97, avax: 43113 }
       }
 
       const wallet = await Wallet.findOne({ user: user._id }, "address")
 
-      const chainId = !!query.chain ? chains[query.chain.toLowerCase()] : chains["eth"]
+      const chainId = chains[query.chain.toLowerCase() === "bnbt" ? "bsc" : query.chain.toLowerCase()]
       const transactions = await covalent.getTransactions(chainId, wallet.address)
 
       Controller.success(res, `${query.chain.toUpperCase()} Transactions loaded`, transactions)
     } catch (e) {
-      console.log(e)
       next(e)
     }
   }
 
   async fetchTransaction(req, res, next) {
     try {
-      const { query, params } = req,
+      let chains
+      const { query, params } = req
+      try {
         chains = JSON.parse(process.env.CHAINS)
+      } catch (e) {
+        chains = { ftm: 4002, matic: 80001, eth: 42, bsc: 97, avax: 43113 }
+      }
 
-      const chainId = chains[query.chain] || chains["eth"]
+      const chainId = chains[query.chain.toLowerCase() === "bnbt" ? "bsc" : query.chain.toLowerCase()]
       const transaction = await covalent.getTransaction(chainId, params.hash)
 
       Controller.success(res, `Transaction fetched`, transaction)

@@ -19,6 +19,7 @@ app.use("*", (_req, _res, next) => {
 })
 
 app.use((err, _req, res, _next) => {
+  // console.log(err)
   Controller.error(res, err.message)
 })
 
