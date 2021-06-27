@@ -1,8 +1,10 @@
 const { Wallet } = require("../models/Wallet")
 const { Covalent } = require("../helpers/Covalent")
+const { Web3Helper } = require("../helpers/Web3")
 const { Controller } = require("../helpers/Controller")
 
 const covalent = new Covalent()
+const web3 = new Web3Helper()
 
 class WalletController {
   async getWallet(req, res, next) {
@@ -45,6 +47,23 @@ class WalletController {
 
         Controller.success(res, `Balances fetched`, data)
       }
+    } catch (e) {
+      next(e)
+    }
+  }
+
+  async exportKeystore(req, res, next) {
+    try {
+      const { user, body } = req
+      const wallet = await Wallet.findOne({ user: user._id })
+      if (!wallet) {
+        throw new Error("Wallet not found")
+      }
+      const secret = Buffer.from(user.username).toString("base64")
+      const privateKey = web3.decryptKeystore(wallet.keystore, secret).privateKey
+
+      const keystore = web3.getKeystore(privateKey, body.password)
+      Controller.success(res, "Keystore export successful", keystore)
     } catch (e) {
       next(e)
     }
