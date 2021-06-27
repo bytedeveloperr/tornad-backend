@@ -10,17 +10,23 @@ const authMiddleware = () => {
       }
       const bearerToken = bearerHeader.split(" ")[1]
       if (!bearerToken) {
-        next(new Error("Bearer token is required"))
+        const err = new Error("Bearer token is required")
+        err.status = 401
+        next(err)
       }
 
       const { _id } = await Jwt.verify(bearerToken, process.env.JWT_SECRET)
 
       if (!_id) {
-        next(new Error("User ID not found in Bearer token"))
+        const err = new Error("User ID not found in Bearer token")
+        err.status = 401
+        next(err)
       }
       req.user = await User.findOne({ _id })
       if (!req.user) {
-        next(new Error("User not found"))
+        const err = new Error("Loggedin user may have been deleted or logged out")
+        err.status = 401
+        next(err)
       }
 
       next()

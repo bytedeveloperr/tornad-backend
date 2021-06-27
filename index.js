@@ -1,8 +1,9 @@
 const express = require("express")
 const mongoose = require("mongoose")
 const { router } = require("./app/config/routes")
-const { Controller } = require("./app/helpers/Controller")
 const cors = require("cors")
+const { errorMiddleware } = require("./app/middleware/errorMiddleware")
+const { notFoundMiddleware } = require("./app/middleware/notFoundMiddleware")
 
 const app = express()
 
@@ -13,15 +14,9 @@ app.use(express.json())
 app.use(cors())
 app.use(router)
 
-app.use("*", (_req, _res, next) => {
-  const err = new Error("Route not found")
-  next(err)
-})
+app.use("*", notFoundMiddleware())
 
-app.use((err, _req, res, _next) => {
-  console.log(err)
-  Controller.error(res, err.message)
-})
+app.use(errorMiddleware())
 
 const PORT = process.env.PORT || 3000
 
